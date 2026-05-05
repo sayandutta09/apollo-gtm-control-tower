@@ -12,6 +12,10 @@ This page uses synthetic data to demonstrate account prioritization, pilot-to-pr
 - Forecast scenario controls with explicit commit rules
 - Investor-style snapshot separating traction signals from confidence signals
 - Editable business-rule toggles with audit-style flags
+- Guided 5-minute walkthrough mode
+- Assumptions drawer explaining the synthetic model and score formula
+- Board-update copy block for interview follow-up
+- Definitions tab covering every major metric, score, stage, rule, and forecast term
 
 ## Run Locally
 
@@ -42,4 +46,3 @@ Use the walkthrough like this:
 3. The readiness board shows what blocks conversion to production.
 4. The partner view shows why co-sell motion needs its own operating cadence.
 5. The forecast and investor layers show what leadership should believe this week.
-

@@ -627,12 +627,75 @@ const defaultRules = Object.fromEntries(ruleDefinitions.map((rule) => [rule.id, 
 let activeRules = { ...defaultRules };
 let activeView = "overview";
 let scenario = "base";
+let demoMode = false;
+let demoIndex = 0;
 let filterState = {
   source: "all",
   vertical: "all",
   stage: "all",
   sortBy: "priorityScore",
   fitThreshold: 0
+};
+
+const demoSteps = [
+  {
+    view: "overview",
+    eyebrow: "Step 1 of 7",
+    title: "Start with the operating premise",
+    detail:
+      "Frame the artifact as a weekly GTM operating rhythm for moving from promising pilots to repeatable production deployments."
+  },
+  {
+    view: "prioritization",
+    eyebrow: "Step 2 of 7",
+    title: "Show where leadership should focus",
+    detail:
+      "Use the priority queue to explain fit, readiness, strategic value, and why weak-fit opportunities are intentionally excluded."
+  },
+  {
+    view: "readiness",
+    eyebrow: "Step 3 of 7",
+    title: "Make pilot-to-production risk visible",
+    detail:
+      "Use stage-exit criteria and blockers to show what must be true before a pilot becomes production-ready."
+  },
+  {
+    view: "partner",
+    eyebrow: "Step 4 of 7",
+    title: "Separate partner motion from direct sales",
+    detail:
+      "Point to Google Cloud and channel leverage as a distinct operating cadence with its own conversion and aging benchmarks."
+  },
+  {
+    view: "forecast",
+    eyebrow: "Step 5 of 7",
+    title: "Forecast with rules, not optimism",
+    detail:
+      "Show what is commit, what is best case, and why some accounts are not forecastable yet."
+  },
+  {
+    view: "investor",
+    eyebrow: "Step 6 of 7",
+    title: "Translate operations into investor narrative",
+    detail:
+      "Close by separating traction from confidence and naming the leadership decisions that change the growth story."
+  },
+  {
+    view: "definitions",
+    eyebrow: "Step 7 of 7",
+    title: "Leave a self-contained reference layer",
+    detail:
+      "Use the definitions tab as backup when a reviewer wants the exact meaning of metrics, scores, stages, rules, or forecast categories."
+  }
+];
+
+const exitCriteriaByBucket = {
+  Discovery: "Exit: business owner, measurable pain, and ICP fit confirmed.",
+  "Pilot scoped": "Exit: success criteria, pilot owner, and implementation scope locked.",
+  "Security review": "Exit: security review passed or executive path to approval set.",
+  "Integration build": "Exit: integration owner, test data, and launch dependencies confirmed.",
+  "Production candidate": "Exit: go-live date, support plan, and expansion hypothesis aligned.",
+  "At risk": "Exit: remove hard blocker or formally deprioritize."
 };
 
 const scenarioWeights = {
@@ -674,6 +737,16 @@ function formatMoney(value, compact = true) {
   return compact ? compactCurrencyFormatter.format(value) : currencyFormatter.format(value);
 }
 
+function formatSignedMoney(value) {
+  const prefix = value > 0 ? "+" : value < 0 ? "-" : "";
+  return `${prefix}${formatMoney(Math.abs(value))}`;
+}
+
+function formatSignedNumber(value) {
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${numberFormatter.format(value)}`;
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -699,7 +772,7 @@ function statusChip(label, kind = "") {
   return `<span class="status-chip ${cssClass(kind || label)}">${escapeHtml(label)}</span>`;
 }
 
-function deriveAccount(account) {
+function deriveAccount(account, rules = activeRules, activeScenario = scenario) {
   const audit = [];
 
   let fitScore =
@@ -724,14 +797,14 @@ function deriveAccount(account) {
   let blockerPenalty = account.blockerSeverity * 4 + account.productGapSeverity * 1.5;
   let disqualified = false;
 
-  if (activeRules.policyCriticalBoost && (account.regulated || account.policyCriticality >= 4)) {
+  if (rules.policyCriticalBoost && (account.regulated || account.policyCriticality >= 4)) {
     fitScore += 5;
     strategicScore += 4;
     audit.push("Regulated or policy-critical workflow received priority weight.");
   }
 
   if (
-    activeRules.securityAgingEscalation &&
+    rules.securityAgingEscalation &&
     account.securityStatus === "In review" &&
     account.daysInStage > 14
   ) {
@@ -741,7 +814,7 @@ function deriveAccount(account) {
   }
 
   if (
-    activeRules.weakUseCasePenalty &&
+    rules.weakUseCasePenalty &&
     (account.useCaseType === "low-stakes" || !account.measurementPath || !account.ownerDefined)
   ) {
     fitScore -= 14;
@@ -754,32 +827,38 @@ function deriveAccount(account) {
     audit.push("Weak-fit or low-measurement criteria reduced priority.");
   }
 
-  if (activeRules.integrationOwnerCap && !account.integrationOwner && readinessScore > 70) {
+  if (rules.integrationOwnerCap && !account.integrationOwner && readinessScore > 70) {
     readinessScore = 70;
     audit.push("Readiness capped because no integration owner is assigned.");
-  } else if (activeRules.integrationOwnerCap && !account.integrationOwner) {
+  } else if (rules.integrationOwnerCap && !account.integrationOwner) {
     audit.push("Integration owner missing before production readiness can be trusted.");
   }
 
-  const priorityScore = clamp(
-    fitScore * 0.5 + readinessScore * 0.35 + strategicScore * 0.15 - blockerPenalty
-  );
-
   const fit = clamp(fitScore);
   const readiness = clamp(readinessScore);
-  const forecast = getForecastCategory(account, fit, readiness, priorityScore, disqualified, audit);
-  const weightedAcv = account.estimatedAcv * scenarioWeights[scenario][forecast.key];
+  const strategic = clamp(strategicScore);
+  const priorityScore = clamp(fit * 0.5 + readiness * 0.35 + strategic * 0.15 - blockerPenalty);
+  const forecast = getForecastCategory(account, fit, readiness, priorityScore, disqualified, rules, audit);
+  const weightedAcv = account.estimatedAcv * scenarioWeights[activeScenario][forecast.key];
   const readinessBucket = getReadinessBucket(account, readiness, forecast, disqualified);
   const recommendedAction = getRecommendedAction(account, readiness, priorityScore, forecast, disqualified);
+  const forecastBlockers = getForecastBlockers(account, forecast, disqualified, rules);
 
   return {
     ...account,
     fitScore: fit,
     readinessScore: readiness,
     priorityScore,
-    strategicScore: clamp(strategicScore),
+    strategicScore: strategic,
+    scoreBreakdown: {
+      fit: fit * 0.5,
+      readiness: readiness * 0.35,
+      strategic: strategic * 0.15,
+      blockerPenalty
+    },
     disqualified,
     forecast,
+    forecastBlockers,
     weightedAcv,
     readinessBucket,
     recommendedAction,
@@ -787,9 +866,9 @@ function deriveAccount(account) {
   };
 }
 
-function getForecastCategory(account, fit, readiness, priority, disqualified, audit) {
+function getForecastCategory(account, fit, readiness, priority, disqualified, rules, audit) {
   const successRuleBlocksCommit =
-    activeRules.successCriteriaCommit && !account.successCriteriaDefined;
+    rules.successCriteriaCommit && !account.successCriteriaDefined;
   const hasHardBlocker =
     disqualified ||
     successRuleBlocksCommit ||
@@ -823,6 +902,35 @@ function getForecastCategory(account, fit, readiness, priority, disqualified, au
   }
 
   return { label: "Pipeline", key: "pipeline", className: "pipeline" };
+}
+
+function getForecastBlockers(account, forecast, disqualified, rules) {
+  const blockers = [];
+  if (forecast.key === "commit") {
+    return blockers;
+  }
+  if (disqualified) {
+    blockers.push("Fails hard qualification rules.");
+  }
+  if (rules.successCriteriaCommit && !account.successCriteriaDefined) {
+    blockers.push("Success criteria not defined.");
+  }
+  if (account.securityStatus === "In review") {
+    blockers.push("Security review unresolved.");
+  }
+  if (!account.integrationOwner) {
+    blockers.push("No integration owner assigned.");
+  }
+  if (account.sponsorStrength < 3) {
+    blockers.push("Sponsor strength below commit threshold.");
+  }
+  if (account.blockerSeverity >= 4) {
+    blockers.push(`${account.blockerReason} is a hard blocker.`);
+  }
+  if (account.integrationReadiness < 3) {
+    blockers.push("Integration readiness is not credible yet.");
+  }
+  return blockers.length ? blockers : ["Needs stronger readiness signal before commit."];
 }
 
 function getReadinessBucket(account, readiness, forecast, disqualified) {
@@ -869,8 +977,8 @@ function getRecommendedAction(account, readiness, priority, forecast, disqualifi
   return "Keep in weekly review and advance next stage exit criteria.";
 }
 
-function getProcessedAccounts() {
-  return accounts.map(deriveAccount);
+function getProcessedAccounts(rules = activeRules, activeScenario = scenario) {
+  return accounts.map((account) => deriveAccount(account, rules, activeScenario));
 }
 
 function getFilteredAccounts(processed) {
@@ -914,6 +1022,48 @@ function renderRules() {
       `;
     })
     .join("");
+}
+
+function getOperatingMetrics(processed) {
+  const qualified = processed.filter((account) => !account.disqualified && account.priorityScore >= 50);
+  const commit = processed.filter((account) => account.forecast.key === "commit");
+  const flagged = processed.filter((account) => account.audit.length > 0);
+  return {
+    qualifiedPipeline: sum(qualified, (account) => account.estimatedAcv),
+    weightedForecast: sum(processed, (account) => account.weightedAcv),
+    commitForecast: sum(commit, (account) => account.weightedAcv),
+    flaggedAccounts: flagged.length
+  };
+}
+
+function renderRuleImpact(processed) {
+  const rulesOff = getProcessedAccounts(
+    Object.fromEntries(ruleDefinitions.map((rule) => [rule.id, false])),
+    scenario
+  );
+  const current = getOperatingMetrics(processed);
+  const baseline = getOperatingMetrics(rulesOff);
+  const qualifiedDelta = current.qualifiedPipeline - baseline.qualifiedPipeline;
+  const commitDelta = current.commitForecast - baseline.commitForecast;
+  const flagDelta = current.flaggedAccounts - baseline.flaggedAccounts;
+
+  byId("ruleImpact").innerHTML = `
+    <p class="eyebrow">Rule impact</p>
+    <div class="impact-list">
+      <div>
+        <strong>${formatSignedMoney(qualifiedDelta)}</strong>
+        <span>qualified pipeline</span>
+      </div>
+      <div>
+        <strong>${formatSignedMoney(commitDelta)}</strong>
+        <span>commit forecast</span>
+      </div>
+      <div>
+        <strong>${formatSignedNumber(flagDelta)}</strong>
+        <span>flagged accounts</span>
+      </div>
+    </div>
+  `;
 }
 
 function renderKpis(processed) {
@@ -1092,6 +1242,11 @@ function renderReadiness(processed) {
             <article class="board-card">
               <button type="button" data-account="${account.id}">${escapeHtml(account.account)}</button>
               <div class="muted">${escapeHtml(account.useCase)}</div>
+              <div class="board-signals">
+                ${account.daysInStage > 14 ? statusChip(`${account.daysInStage}d stuck`, "caution") : ""}
+                ${!account.successCriteriaDefined ? statusChip("No success criteria", "risk") : ""}
+                ${!account.integrationOwner ? statusChip("No owner", "risk") : ""}
+              </div>
               <div class="board-meta">
                 <span>${escapeHtml(account.blockerReason)}</span>
                 ${statusChip(Math.round(account.readinessScore), account.forecast.className)}
@@ -1104,7 +1259,10 @@ function renderReadiness(processed) {
       return `
         <section class="board-column" aria-label="${escapeHtml(bucket)}">
           <header>
-            <h3>${escapeHtml(bucket)}</h3>
+            <div>
+              <h3>${escapeHtml(bucket)}</h3>
+              <p>${escapeHtml(exitCriteriaByBucket[bucket])}</p>
+            </div>
             <span class="count-pill">${bucketAccounts.length}</span>
           </header>
           <div class="board-card-list">${cards || `<p class="muted">No accounts</p>`}</div>
@@ -1177,6 +1335,23 @@ function renderPartner(processed) {
     colors: ["var(--green)", "var(--teal)", "var(--amber)"]
   });
 
+  const googleAccounts = processed
+    .filter((account) => account.source === "Google Cloud")
+    .sort((a, b) => b.priorityScore - a.priorityScore);
+  const googlePipeline = sum(googleAccounts, (account) => account.estimatedAcv);
+  const googleTop = googleAccounts[0];
+  byId("partnerInsight").innerHTML = `
+    <div>
+      <p class="eyebrow">Google Cloud motion</p>
+      <h3>${formatMoney(googlePipeline)} synthetic Google Cloud-sourced pipeline</h3>
+      <p>
+        Partner leverage changes priority most clearly at ${escapeHtml(googleTop.account)}:
+        ${escapeHtml(googleTop.recommendedAction)}
+      </p>
+    </div>
+    ${statusChip(`${googleAccounts.length} accounts`, "best")}
+  `;
+
   byId("partnerTableBody").innerHTML = processed
     .filter((account) => account.source !== "Direct" || account.partnerLeverage >= 4)
     .sort((a, b) => b.partnerLeverage - a.partnerLeverage || b.priorityScore - a.priorityScore)
@@ -1244,7 +1419,11 @@ function renderForecast(processed) {
           <td class="money">${formatMoney(account.estimatedAcv, false)}</td>
           <td>${statusChip(account.forecast.label, account.forecast.className)}</td>
           <td class="money">${formatMoney(account.weightedAcv, false)}</td>
-          <td>${account.audit.length ? escapeHtml(account.audit.join(" ")) : "No rule flags"}</td>
+          <td>${
+            account.forecast.key === "commit"
+              ? "Forecastable under current rules"
+              : escapeHtml(account.forecastBlockers.join(" "))
+          }</td>
         </tr>
       `
     )
@@ -1305,6 +1484,49 @@ function renderInvestor(processed) {
   renderNarrativeList("tractionList", traction);
   renderNarrativeList("confidenceList", confidence);
   renderNarrativeList("blockerList", blockers);
+  renderBoardUpdate(traction, confidence, blockers);
+}
+
+function renderBoardUpdate(traction, confidence, blockers) {
+  const processed = getProcessedAccounts();
+  const leadershipAsk = blockers[0]?.detail || "Keep production-readiness reviews tied to explicit stage-exit rules.";
+  const update = [
+    ["Traction", traction[0].title],
+    ["Confidence", confidence[2].title],
+    ["Risk", blockers[0]?.title || "No critical blockers under current rules"],
+    ["Leadership ask", leadershipAsk]
+  ];
+
+  byId("boardUpdate").innerHTML = `
+    ${update
+      .map(
+        ([label, value]) => `
+          <div class="board-update-row">
+            <strong>${escapeHtml(label)}</strong>
+            <span>${escapeHtml(value)}</span>
+          </div>
+        `
+      )
+      .join("")}
+    <button class="secondary-button" type="button" id="copyBoardUpdate">Copy board update</button>
+  `;
+
+  const button = byId("copyBoardUpdate");
+  if (button) {
+    button.addEventListener("click", () => {
+      copyText(
+        [
+          "AUI GTM Control Tower - board update",
+          `Traction: ${traction[0].title}`,
+          `Confidence: ${confidence[2].title}`,
+          `Risk: ${blockers[0]?.title || "No critical blockers under current rules"}`,
+          `Leadership ask: ${leadershipAsk}`,
+          `Synthetic accounts reviewed: ${processed.length}`
+        ].join("\n"),
+        "Board update copied"
+      );
+    });
+  }
 }
 
 function renderNarrativeList(elementId, items) {
@@ -1323,6 +1545,7 @@ function renderNarrativeList(elementId, items) {
 function renderDrawer(accountId) {
   const account = getProcessedAccounts().find((item) => item.id === accountId);
   if (!account) return;
+  closeAssumptions();
 
   byId("drawerEyebrow").textContent = `${account.vertical} - ${account.source}`;
   byId("drawerTitle").textContent = account.account;
@@ -1357,6 +1580,21 @@ function renderDrawer(accountId) {
     <section class="panel">
       <div class="panel-heading">
         <div>
+          <p class="eyebrow">Score breakdown</p>
+          <h3>Why this account ranks here</h3>
+        </div>
+      </div>
+      <div class="score-breakdown">
+        <div><span>Fit contribution</span><strong>${account.scoreBreakdown.fit.toFixed(1)}</strong></div>
+        <div><span>Readiness contribution</span><strong>${account.scoreBreakdown.readiness.toFixed(1)}</strong></div>
+        <div><span>Strategic contribution</span><strong>${account.scoreBreakdown.strategic.toFixed(1)}</strong></div>
+        <div><span>Blocker penalty</span><strong>-${account.scoreBreakdown.blockerPenalty.toFixed(1)}</strong></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
           <p class="eyebrow">Use case</p>
           <h3>${escapeHtml(account.useCase)}</h3>
         </div>
@@ -1364,7 +1602,25 @@ function renderDrawer(accountId) {
       <p class="muted">${escapeHtml(account.recommendedAction)}</p>
     </section>
 
-    <section class="panel" style="margin-top: 12px;">
+    <section class="panel drawer-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Mini account plan</p>
+          <h3>Next operating move</h3>
+        </div>
+      </div>
+      <div class="account-plan">
+        <div><strong>Owner</strong><span>${account.integrationOwner ? "Integration and GTM owner assigned" : "Needs integration owner"}</span></div>
+        <div><strong>Exit criteria</strong><span>${escapeHtml(exitCriteriaByBucket[account.readinessBucket])}</span></div>
+        <div><strong>Forecast gate</strong><span>${
+          account.forecast.key === "commit"
+            ? "Clears current commit rules"
+            : escapeHtml(account.forecastBlockers[0])
+        }</span></div>
+      </div>
+    </section>
+
+    <section class="panel drawer-panel">
       <div class="panel-heading">
         <div>
           <p class="eyebrow">Audit trail</p>
@@ -1394,6 +1650,7 @@ function closeDrawer() {
 
 function renderAll() {
   const processed = getProcessedAccounts();
+  renderRuleImpact(processed);
   renderKpis(processed);
   renderOverview(processed);
   renderPrioritization(processed);
@@ -1404,7 +1661,16 @@ function renderAll() {
   bindAccountButtons();
 }
 
-function setActiveView(viewId) {
+function hashForView(viewId) {
+  return `#/${viewId}`;
+}
+
+function viewFromHash() {
+  const candidate = window.location.hash.replace(/^#\/?/, "");
+  return document.getElementById(candidate)?.classList.contains("view-section") ? candidate : "";
+}
+
+function setActiveView(viewId, updateHash = true) {
   activeView = viewId;
   document.querySelectorAll(".nav-tab").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === viewId);
@@ -1416,6 +1682,67 @@ function setActiveView(viewId) {
       byId("viewTitle").textContent = section.dataset.title;
     }
   });
+  if (updateHash && window.location.hash !== hashForView(viewId)) {
+    history.pushState(null, "", hashForView(viewId));
+  }
+  if (demoMode) {
+    const matchingStep = demoSteps.findIndex((step) => step.view === viewId);
+    if (matchingStep >= 0) {
+      demoIndex = matchingStep;
+      updateDemoCoach();
+    }
+  }
+}
+
+function startDemo() {
+  const matchingStep = demoSteps.findIndex((step) => step.view === activeView);
+  demoIndex = matchingStep >= 0 ? matchingStep : 0;
+  demoMode = true;
+  setActiveView(demoSteps[demoIndex].view);
+  updateDemoCoach();
+}
+
+function nextDemoStep() {
+  if (!demoMode) {
+    startDemo();
+    return;
+  }
+  if (demoIndex >= demoSteps.length - 1) {
+    closeDemo();
+    return;
+  }
+  demoIndex += 1;
+  setActiveView(demoSteps[demoIndex].view);
+  updateDemoCoach();
+}
+
+function updateDemoCoach() {
+  const panel = byId("demoCoach");
+  const step = demoSteps[demoIndex];
+  panel.classList.toggle("active", demoMode);
+  if (!demoMode || !step) return;
+  byId("demoEyebrow").textContent = step.eyebrow;
+  byId("demoTitle").textContent = step.title;
+  byId("demoDetail").textContent = step.detail;
+  byId("nextDemoStep").textContent = demoIndex === demoSteps.length - 1 ? "Finish" : "Next step";
+}
+
+function closeDemo() {
+  demoMode = false;
+  updateDemoCoach();
+}
+
+function openAssumptions() {
+  closeDrawer();
+  const drawer = byId("assumptionsDrawer");
+  drawer.classList.add("open");
+  drawer.setAttribute("aria-hidden", "false");
+}
+
+function closeAssumptions() {
+  const drawer = byId("assumptionsDrawer");
+  drawer.classList.remove("open");
+  drawer.setAttribute("aria-hidden", "true");
 }
 
 function bindAccountButtons() {
@@ -1462,17 +1789,21 @@ function createSummary() {
 
 async function exportSummary() {
   const summary = createSummary();
+  copyText(summary, "Summary copied to clipboard", "Summary downloaded");
+}
+
+async function copyText(text, copiedMessage, downloadedMessage = "Text downloaded") {
   try {
-    await navigator.clipboard.writeText(summary);
-    showToast("Summary copied to clipboard");
+    await navigator.clipboard.writeText(text);
+    showToast(copiedMessage);
   } catch (_error) {
-    const blob = new Blob([summary], { type: "text/plain" });
+    const blob = new Blob([text], { type: "text/plain" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = "apollo-gtm-control-tower-summary.txt";
     link.click();
     URL.revokeObjectURL(link.href);
-    showToast("Summary downloaded");
+    showToast(downloadedMessage);
   }
 }
 
@@ -1517,12 +1848,26 @@ function bindEvents() {
     renderAll();
     showToast("Rules reset");
   });
+  byId("startDemo").addEventListener("click", startDemo);
+  byId("nextDemoStep").addEventListener("click", nextDemoStep);
+  byId("closeDemo").addEventListener("click", closeDemo);
+  byId("openAssumptions").addEventListener("click", openAssumptions);
+  byId("closeAssumptions").addEventListener("click", closeAssumptions);
   byId("closeDrawer").addEventListener("click", closeDrawer);
   byId("exportSummary").addEventListener("click", exportSummary);
+
+  window.addEventListener("hashchange", () => {
+    const hashView = viewFromHash();
+    if (hashView) {
+      setActiveView(hashView, false);
+    }
+  });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeDrawer();
+      closeAssumptions();
+      closeDemo();
     }
   });
 }
@@ -1532,7 +1877,8 @@ function init() {
   renderRules();
   bindEvents();
   renderAll();
-  setActiveView(activeView);
+  setActiveView(viewFromHash() || activeView, false);
+  updateDemoCoach();
 }
 
 init();

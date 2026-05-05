@@ -46,6 +46,10 @@
             <span aria-hidden="true">06</span>
             Investor
           </button>
+          <button class="nav-tab" type="button" data-view="definitions" aria-label="Definitions and glossary">
+            <span aria-hidden="true">07</span>
+            Definitions
+          </button>
         </nav>
 
         <section class="rule-panel" aria-labelledby="rules-heading">
@@ -59,6 +63,7 @@
             </button>
           </div>
           <div id="rulesList" class="rules-list"></div>
+          <div class="rule-impact" id="ruleImpact" aria-live="polite"></div>
         </section>
       </aside>
 
@@ -70,11 +75,27 @@
           </div>
           <div class="topbar-actions">
             <span class="data-badge">Synthetic data only</span>
+            <button class="secondary-button" type="button" id="startDemo">Start walkthrough</button>
+            <button class="secondary-button" type="button" id="openAssumptions">Assumptions</button>
             <button class="secondary-button" type="button" id="exportSummary">Export summary</button>
           </div>
         </header>
 
         <section class="kpi-grid" id="kpiGrid" aria-label="Key metrics"></section>
+
+        <section class="demo-coach" id="demoCoach" aria-live="polite" aria-label="Walkthrough coach">
+          <div>
+            <p class="eyebrow" id="demoEyebrow">Walkthrough</p>
+            <h3 id="demoTitle"></h3>
+            <p id="demoDetail"></p>
+          </div>
+          <div class="demo-actions">
+            <button class="secondary-button" type="button" id="nextDemoStep">Next step</button>
+            <button class="icon-button" type="button" id="closeDemo" title="Close walkthrough" aria-label="Close walkthrough">
+              <span aria-hidden="true">x</span>
+            </button>
+          </div>
+        </section>
 
         <section class="view-section active" id="overview" data-title="Weekly operating view">
           <div class="overview-grid">
@@ -218,6 +239,8 @@
             </section>
           </div>
 
+          <section class="insight-strip" id="partnerInsight" aria-label="Partner insight"></section>
+
           <section class="panel table-panel" aria-labelledby="partner-table-heading">
             <div class="panel-heading">
               <div>
@@ -303,7 +326,7 @@
                     <th>ACV</th>
                     <th>Forecast</th>
                     <th>Weighted</th>
-                    <th>Rule flags</th>
+                    <th>Not forecastable because</th>
                   </tr>
                 </thead>
                 <tbody id="forecastTableBody"></tbody>
@@ -344,6 +367,259 @@
               <div id="blockerList" class="narrative-list"></div>
             </section>
           </div>
+
+          <section class="panel board-update-panel" aria-labelledby="board-update-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Ready to paste</p>
+                <h3 id="board-update-heading">Board update</h3>
+              </div>
+            </div>
+            <div id="boardUpdate" class="board-update"></div>
+          </section>
+        </section>
+
+        <section class="view-section" id="definitions" data-title="Definitions and glossary">
+          <section class="glossary-hero panel" aria-labelledby="glossary-heading">
+            <div>
+              <p class="eyebrow">Reference layer</p>
+              <h3 id="glossary-heading">What every term in the control tower means</h3>
+              <p>
+                This glossary makes the prototype self-contained for interview reviewers. It defines the operating
+                language behind the dashboard, scoring model, stages, rules, and investor narrative.
+              </p>
+            </div>
+          </section>
+
+          <div class="glossary-grid">
+            <section class="panel glossary-card" aria-labelledby="glossary-sections">
+              <p class="eyebrow">Site sections</p>
+              <h3 id="glossary-sections">Dashboard tabs</h3>
+              <dl>
+                <div>
+                  <dt>Overview</dt>
+                  <dd>The executive weekly operating view: top KPIs, decisions, and highest-priority opportunities.</dd>
+                </div>
+                <div>
+                  <dt>Prioritization</dt>
+                  <dd>The ranked account queue showing where GTM energy should go and which opportunities should be deprioritized.</dd>
+                </div>
+                <div>
+                  <dt>Readiness</dt>
+                  <dd>The pilot-to-production board that tracks what must be true before an opportunity can launch.</dd>
+                </div>
+                <div>
+                  <dt>Partner</dt>
+                  <dd>The co-sell view separating direct pipeline from Google Cloud and channel-sourced motion.</dd>
+                </div>
+                <div>
+                  <dt>Forecast</dt>
+                  <dd>The scenario view that shows commit, best case, pipeline, and at-risk revenue under explicit rules.</dd>
+                </div>
+                <div>
+                  <dt>Investor</dt>
+                  <dd>The board-style narrative that separates traction, confidence, risk, and leadership asks.</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="panel glossary-card" aria-labelledby="glossary-kpis">
+              <p class="eyebrow">Top metrics</p>
+              <h3 id="glossary-kpis">KPI definitions</h3>
+              <dl>
+                <div>
+                  <dt>Qualified pipeline</dt>
+                  <dd>Modeled ACV from accounts above the priority threshold and not disqualified by hard-fit rules.</dd>
+                </div>
+                <div>
+                  <dt>Partner share</dt>
+                  <dd>The percentage of synthetic pipeline sourced through Google Cloud or channel partners.</dd>
+                </div>
+                <div>
+                  <dt>Pilot to prod</dt>
+                  <dd>The share of active, non-discovery accounts that are production candidates or commit-ready.</dd>
+                </div>
+                <div>
+                  <dt>Average days to production</dt>
+                  <dd>Modeled time-to-production across qualified accounts, used as a deployment-velocity signal.</dd>
+                </div>
+                <div>
+                  <dt>Forecast cover</dt>
+                  <dd>Weighted forecast divided by a synthetic quarterly target, used as a coverage proxy.</dd>
+                </div>
+                <div>
+                  <dt>Escalations</dt>
+                  <dd>Accounts with hard blockers or rule-triggered leadership flags.</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="panel glossary-card" aria-labelledby="glossary-scores">
+              <p class="eyebrow">Scoring model</p>
+              <h3 id="glossary-scores">Score definitions</h3>
+              <dl>
+                <div>
+                  <dt>Fit score</dt>
+                  <dd>How well the opportunity matches AUI's likely wedge: policy-critical, auditable, action-heavy workflows with integration depth.</dd>
+                </div>
+                <div>
+                  <dt>Readiness score</dt>
+                  <dd>How credible the path to production is based on sponsor strength, security progress, integration readiness, success criteria, and resourcing.</dd>
+                </div>
+                <div>
+                  <dt>Strategic value</dt>
+                  <dd>Modeled importance beyond near-term ACV, including vertical proof, expansion potential, and partner leverage.</dd>
+                </div>
+                <div>
+                  <dt>Blocker penalty</dt>
+                  <dd>A deduction for unresolved risks such as security review, missing owner, weak measurement, product gap, or sponsor gap.</dd>
+                </div>
+                <div>
+                  <dt>Priority score</dt>
+                  <dd>The final rank: 50% fit, 35% readiness, 15% strategic value, minus blocker penalties.</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="panel glossary-card" aria-labelledby="glossary-forecast">
+              <p class="eyebrow">Forecasting</p>
+              <h3 id="glossary-forecast">Forecast terms</h3>
+              <dl>
+                <div>
+                  <dt>Commit</dt>
+                  <dd>Revenue that clears strict readiness gates: sponsor, security, integration, stage, and success-criteria rules.</dd>
+                </div>
+                <div>
+                  <dt>Best case</dt>
+                  <dd>Strong opportunities that are plausible but still need one or more readiness signals before commit.</dd>
+                </div>
+                <div>
+                  <dt>Pipeline</dt>
+                  <dd>Active opportunities that remain valid but are not yet forecastable with high confidence.</dd>
+                </div>
+                <div>
+                  <dt>At risk</dt>
+                  <dd>Accounts with hard blockers, weak fit, missing ownership, low readiness, or poor measurement paths.</dd>
+                </div>
+                <div>
+                  <dt>Weighted forecast</dt>
+                  <dd>Estimated ACV multiplied by scenario weights for commit, best case, pipeline, and at-risk categories.</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="panel glossary-card" aria-labelledby="glossary-stages">
+              <p class="eyebrow">Production path</p>
+              <h3 id="glossary-stages">Stage definitions</h3>
+              <dl>
+                <div>
+                  <dt>Discovery</dt>
+                  <dd>Business pain, owner, and fit are still being confirmed.</dd>
+                </div>
+                <div>
+                  <dt>Pilot scoped</dt>
+                  <dd>The pilot has a defined use case, but success criteria or implementation scope may still need tightening.</dd>
+                </div>
+                <div>
+                  <dt>Security review</dt>
+                  <dd>The account is blocked or gated by security, compliance, procurement, or risk approval.</dd>
+                </div>
+                <div>
+                  <dt>Integration build</dt>
+                  <dd>The technical path is active and depends on systems access, APIs, implementation ownership, and test data.</dd>
+                </div>
+                <div>
+                  <dt>Production candidate</dt>
+                  <dd>The account is close to launch and mainly needs final go-live alignment and support planning.</dd>
+                </div>
+                <div>
+                  <dt>At risk</dt>
+                  <dd>The account needs intervention or deprioritization before it consumes more GTM capacity.</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="panel glossary-card" aria-labelledby="glossary-rules">
+              <p class="eyebrow">Rules</p>
+              <h3 id="glossary-rules">Business-rule meanings</h3>
+              <dl>
+                <div>
+                  <dt>Commit requires success criteria</dt>
+                  <dd>An opportunity cannot become commit without measurable production outcomes.</dd>
+                </div>
+                <div>
+                  <dt>Boost regulated workflows</dt>
+                  <dd>Accounts with policy-heavy, auditable, or regulated workflows get extra fit and strategic weight.</dd>
+                </div>
+                <div>
+                  <dt>Escalate stale security review</dt>
+                  <dd>Security review older than 14 days creates a leadership-visible blocker.</dd>
+                </div>
+                <div>
+                  <dt>Down-rank weak-fit use cases</dt>
+                  <dd>Low-stakes, open-ended, or low-measurement opportunities lose priority.</dd>
+                </div>
+                <div>
+                  <dt>Cap readiness without owner</dt>
+                  <dd>Production readiness cannot be trusted without a named integration owner.</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="panel glossary-card" aria-labelledby="glossary-fields">
+              <p class="eyebrow">Account fields</p>
+              <h3 id="glossary-fields">Data field definitions</h3>
+              <dl>
+                <div>
+                  <dt>Estimated ACV</dt>
+                  <dd>Synthetic annual contract value for the modeled opportunity.</dd>
+                </div>
+                <div>
+                  <dt>Policy criticality</dt>
+                  <dd>How important rules, compliance, approvals, or governed decisions are to the workflow.</dd>
+                </div>
+                <div>
+                  <dt>Process actionability</dt>
+                  <dd>How much the agent must do, route, update, resolve, or trigger rather than just answer.</dd>
+                </div>
+                <div>
+                  <dt>Auditability need</dt>
+                  <dd>How important traceability and explainable decision records are for the buyer.</dd>
+                </div>
+                <div>
+                  <dt>Integration readiness</dt>
+                  <dd>How ready the customer and AUI would be to connect the systems required for production.</dd>
+                </div>
+                <div>
+                  <dt>Sponsor strength</dt>
+                  <dd>How clearly an executive or business owner can fund, unblock, and champion the deployment.</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="panel glossary-card" aria-labelledby="glossary-narrative">
+              <p class="eyebrow">Narrative</p>
+              <h3 id="glossary-narrative">Interview language</h3>
+              <dl>
+                <div>
+                  <dt>Traction</dt>
+                  <dd>Evidence of demand, pipeline, expansion opportunity, or partner leverage.</dd>
+                </div>
+                <div>
+                  <dt>Confidence</dt>
+                  <dd>Evidence that pipeline can become production revenue: stage discipline, readiness, and forecast quality.</dd>
+                </div>
+                <div>
+                  <dt>Leadership ask</dt>
+                  <dd>The decision or unblock needed from executives this week.</dd>
+                </div>
+                <div>
+                  <dt>Investor snapshot</dt>
+                  <dd>A concise summary that tells investors what is growing, what is believable, and what risks are being managed.</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
         </section>
       </main>
     </div>
@@ -359,6 +635,44 @@
         </button>
       </div>
       <div id="drawerBody"></div>
+    </aside>
+
+    <aside class="detail-drawer" id="assumptionsDrawer" aria-hidden="true" aria-labelledby="assumptionsTitle">
+      <div class="drawer-header">
+        <div>
+          <p class="eyebrow">Model notes</p>
+          <h2 id="assumptionsTitle">Assumptions</h2>
+        </div>
+        <button class="icon-button" type="button" id="closeAssumptions" title="Close" aria-label="Close assumptions">
+          <span aria-hidden="true">x</span>
+        </button>
+      </div>
+      <div class="assumptions-copy">
+        <section class="panel">
+          <p class="eyebrow">Synthetic model</p>
+          <h3>What this prototype is proving</h3>
+          <p>
+            The sample data is fictional. The operating logic is the artifact: prioritize where Apollo's control,
+            auditability, actionability, integrations, and production-readiness discipline matter most.
+          </p>
+        </section>
+        <section class="panel">
+          <p class="eyebrow">Score formula</p>
+          <h3>Priority score</h3>
+          <p>
+            Priority blends fit, readiness, and strategic value, then subtracts blocker penalties. The live rules
+            panel changes the model immediately so the logic stays explicit and auditable.
+          </p>
+        </section>
+        <section class="panel">
+          <p class="eyebrow">Interview frame</p>
+          <h3>How to explain it</h3>
+          <p>
+            This is a weekly GTM operating rhythm for deciding where leadership should focus, what blocks production,
+            what can be forecast honestly, and what investors should believe.
+          </p>
+        </section>
+      </div>
     </aside>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
