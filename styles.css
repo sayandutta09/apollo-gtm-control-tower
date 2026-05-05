@@ -857,9 +857,84 @@ tbody tr:hover {
 }
 
 .bar-fill {
+  display: block;
+  width: 0;
   height: 100%;
   border-radius: inherit;
   background: var(--teal);
+}
+
+.forecast-funnel-panel {
+  margin-bottom: 16px;
+}
+
+.forecast-funnel {
+  display: grid;
+  gap: 10px;
+}
+
+.funnel-stage {
+  display: grid;
+  grid-template-columns: minmax(150px, 210px) 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.funnel-stage-label strong,
+.funnel-stage-label span {
+  display: block;
+}
+
+.funnel-stage-label strong {
+  font-size: 0.9rem;
+}
+
+.funnel-stage-label span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.funnel-stage-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: var(--stage-width);
+  min-width: 180px;
+  min-height: 42px;
+  border-radius: var(--radius);
+  color: #ffffff;
+  background: var(--stage-color);
+  padding: 9px 12px;
+  font-weight: 850;
+  box-shadow: 0 8px 18px rgba(24, 32, 36, 0.08);
+}
+
+.funnel-stage-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -18px;
+  width: 0;
+  height: 0;
+  border-top: 21px solid transparent;
+  border-bottom: 21px solid transparent;
+  border-left: 18px solid var(--stage-color);
+}
+
+.funnel-stage-bar span,
+.funnel-stage-bar small {
+  position: relative;
+  z-index: 1;
+}
+
+.funnel-stage-bar small {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .bar-value {
@@ -1198,6 +1273,19 @@ tbody tr:hover {
   .bar-row {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .funnel-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .funnel-stage-bar {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .funnel-stage-bar::after {
+    display: none;
   }
 
   .insight-strip,

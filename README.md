@@ -10,6 +10,7 @@ This page uses synthetic data to demonstrate account prioritization, pilot-to-pr
 - Pilot-to-production readiness board
 - Partner and co-sell motion split across direct, Google Cloud, and channel sources
 - Forecast scenario controls with explicit commit rules
+- Colored forecast bars plus a forecast confidence funnel
 - Investor-style snapshot separating traction signals from confidence signals
 - Editable business-rule toggles with audit-style flags
 - Guided 5-minute walkthrough mode

@@ -1290,7 +1290,7 @@ function renderBarChart(elementId, rows, options = {}) {
   byId(elementId).innerHTML = rows
     .map((row, index) => {
       const width = Math.max((row.value / max) * 100, row.value > 0 ? 3 : 0);
-      const color = options.colors ? options.colors[index % options.colors.length] : "var(--teal)";
+      const color = row.color || (options.colors ? options.colors[index % options.colors.length] : "var(--teal)");
       return `
         <div class="bar-row">
           <span class="bar-label">${escapeHtml(row.label)}</span>
@@ -1370,15 +1370,62 @@ function renderPartner(processed) {
     .join("");
 }
 
+function renderForecastFunnel(rows) {
+  const max = Math.max(...rows.map((row) => row.value), 1);
+  const colors = {
+    Commit: "var(--green)",
+    "Best case": "var(--blue)",
+    Pipeline: "var(--teal)",
+    "At risk": "var(--red)"
+  };
+  const descriptions = {
+    Commit: "Clears production-readiness rules",
+    "Best case": "Strong but needs one more proof point",
+    Pipeline: "Valid but not forecastable yet",
+    "At risk": "Blocked, weak-fit, or needs intervention"
+  };
+
+  byId("forecastFunnel").innerHTML = rows
+    .map((row) => {
+      const width = Math.max((row.value / max) * 100, 18);
+      return `
+        <article class="funnel-stage" style="--stage-width: ${width}%; --stage-color: ${colors[row.label]}">
+          <div class="funnel-stage-label">
+            <strong>${escapeHtml(row.label)}</strong>
+            <span>${escapeHtml(descriptions[row.label])}</span>
+          </div>
+          <div class="funnel-stage-bar">
+            <span>${escapeHtml(row.display)}</span>
+            <small>${row.count} accounts</small>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
 function renderForecast(processed) {
   const byCategory = groupBy(processed, (account) => account.forecast.label);
-  const categoryRows = Object.entries(byCategory)
-    .map(([label, items]) => ({
-      label,
-      value: sum(items, (account) => account.weightedAcv),
-      display: formatMoney(sum(items, (account) => account.weightedAcv))
-    }))
-    .sort((a, b) => b.value - a.value);
+  const categoryOrder = ["Commit", "Best case", "Pipeline", "At risk"];
+  const categoryColors = {
+    Commit: "var(--green)",
+    "Best case": "var(--blue)",
+    Pipeline: "var(--teal)",
+    "At risk": "var(--red)"
+  };
+  const categoryRows = categoryOrder
+    .filter((label) => byCategory[label]?.length)
+    .map((label) => {
+      const items = byCategory[label];
+      return {
+        label,
+        color: categoryColors[label],
+        value: sum(items, (account) => account.weightedAcv),
+        rawValue: sum(items, (account) => account.estimatedAcv),
+        count: items.length,
+        display: formatMoney(sum(items, (account) => account.weightedAcv))
+      };
+    });
 
   const byStage = groupBy(processed, (account) => account.stage);
   const stageRows = Object.entries(byStage)
@@ -1399,7 +1446,8 @@ function renderForecast(processed) {
     .sort((a, b) => b.value - a.value)
     .slice(0, 6);
 
-  renderBarChart("forecastCategoryChart", categoryRows, {
+  renderForecastFunnel(categoryRows);
+  renderBarChart("forecastCategoryChart", [...categoryRows].sort((a, b) => b.value - a.value), {
     colors: ["var(--green)", "var(--blue)", "var(--teal)", "var(--red)"]
   });
   renderBarChart("stageAgingChart", stageRows, {
