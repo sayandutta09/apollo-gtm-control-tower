@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Apollo GTM Control Tower</title>
+    <meta
+      name="description"
+      content="Synthetic interactive GTM operating prototype for account prioritization, production readiness, partner motion, forecasting, and investor narrative."
+    >
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Control tower navigation">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">A</div>
+          <div>
+            <p class="eyebrow">Synthetic prototype</p>
+            <h1>Apollo GTM Control Tower</h1>
+          </div>
+        </div>
+
+        <nav class="nav-tabs" aria-label="Dashboard sections">
+          <button class="nav-tab active" type="button" data-view="overview" aria-label="Overview">
+            <span aria-hidden="true">01</span>
+            Overview
+          </button>
+          <button class="nav-tab" type="button" data-view="prioritization" aria-label="Prioritization">
+            <span aria-hidden="true">02</span>
+            Prioritization
+          </button>
+          <button class="nav-tab" type="button" data-view="readiness" aria-label="Readiness">
+            <span aria-hidden="true">03</span>
+            Readiness
+          </button>
+          <button class="nav-tab" type="button" data-view="partner" aria-label="Partner motion">
+            <span aria-hidden="true">04</span>
+            Partner
+          </button>
+          <button class="nav-tab" type="button" data-view="forecast" aria-label="Forecast">
+            <span aria-hidden="true">05</span>
+            Forecast
+          </button>
+          <button class="nav-tab" type="button" data-view="investor" aria-label="Investor snapshot">
+            <span aria-hidden="true">06</span>
+            Investor
+          </button>
+        </nav>
+
+        <section class="rule-panel" aria-labelledby="rules-heading">
+          <div class="panel-heading compact">
+            <div>
+              <p class="eyebrow">Editable business logic</p>
+              <h2 id="rules-heading">Rules</h2>
+            </div>
+            <button class="icon-button" type="button" id="resetRules" title="Reset rules" aria-label="Reset rules">
+              <span aria-hidden="true">R</span>
+            </button>
+          </div>
+          <div id="rulesList" class="rules-list"></div>
+        </section>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">AUI StratOps interview artifact</p>
+            <h2 id="viewTitle">Weekly operating view</h2>
+          </div>
+          <div class="topbar-actions">
+            <span class="data-badge">Synthetic data only</span>
+            <button class="secondary-button" type="button" id="exportSummary">Export summary</button>
+          </div>
+        </header>
+
+        <section class="kpi-grid" id="kpiGrid" aria-label="Key metrics"></section>
+
+        <section class="view-section active" id="overview" data-title="Weekly operating view">
+          <div class="overview-grid">
+            <article class="hero-statement">
+              <p class="eyebrow">Operating premise</p>
+              <h3>Move from promising pilots to repeatable production deployments.</h3>
+              <p>
+                The tower prioritizes accounts where policy control, actionability, auditability, and deployment readiness
+                make the commercial case strongest.
+              </p>
+            </article>
+
+            <section class="panel" aria-labelledby="decision-heading">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">This week</p>
+                  <h3 id="decision-heading">Operating decisions</h3>
+                </div>
+              </div>
+              <div class="decision-list" id="decisionList"></div>
+            </section>
+          </div>
+
+          <section class="panel table-panel" aria-labelledby="priority-shortlist-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Executive shortlist</p>
+                <h3 id="priority-shortlist-heading">Highest-priority opportunities</h3>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th>Use case</th>
+                    <th>Stage</th>
+                    <th>Priority</th>
+                    <th>Forecast</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="shortlistBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="view-section" id="prioritization" data-title="Account prioritization">
+          <section class="controls-band" aria-label="Prioritization controls">
+            <label>
+              Source
+              <select id="sourceFilter">
+                <option value="all">All sources</option>
+                <option value="Direct">Direct</option>
+                <option value="Google Cloud">Google Cloud</option>
+                <option value="Channel">Channel</option>
+              </select>
+            </label>
+            <label>
+              Vertical
+              <select id="verticalFilter">
+                <option value="all">All verticals</option>
+              </select>
+            </label>
+            <label>
+              Stage
+              <select id="stageFilter">
+                <option value="all">All stages</option>
+              </select>
+            </label>
+            <label>
+              Sort
+              <select id="sortBy">
+                <option value="priorityScore">Priority score</option>
+                <option value="readinessScore">Readiness score</option>
+                <option value="fitScore">Fit score</option>
+                <option value="estimatedAcv">Estimated ACV</option>
+                <option value="daysInStage">Stage aging</option>
+              </select>
+            </label>
+            <label class="range-label">
+              Minimum fit
+              <input id="fitThreshold" type="range" min="0" max="100" value="0">
+              <span id="fitThresholdValue">0</span>
+            </label>
+          </section>
+
+          <section class="panel table-panel" aria-labelledby="priority-table-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Ranked synthetic pipeline</p>
+                <h3 id="priority-table-heading">Priority queue</h3>
+              </div>
+              <span class="count-pill" id="visibleCount"></span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th>Vertical</th>
+                    <th>Source</th>
+                    <th>Stage</th>
+                    <th>Fit</th>
+                    <th>Ready</th>
+                    <th>Priority</th>
+                    <th>Blocker</th>
+                  </tr>
+                </thead>
+                <tbody id="accountTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="view-section" id="readiness" data-title="Pilot-to-production readiness">
+          <div class="board" id="readinessBoard"></div>
+        </section>
+
+        <section class="view-section" id="partner" data-title="Partner and co-sell motion">
+          <div class="chart-grid">
+            <section class="panel" aria-labelledby="source-pipeline-heading">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Pipeline</p>
+                  <h3 id="source-pipeline-heading">By source</h3>
+                </div>
+              </div>
+              <div id="sourcePipelineChart" class="bar-chart"></div>
+            </section>
+
+            <section class="panel" aria-labelledby="source-conversion-heading">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Conversion proxy</p>
+                  <h3 id="source-conversion-heading">Production candidates</h3>
+                </div>
+              </div>
+              <div id="sourceConversionChart" class="bar-chart"></div>
+            </section>
+          </div>
+
+          <section class="panel table-panel" aria-labelledby="partner-table-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Co-sell queue</p>
+                <h3 id="partner-table-heading">Partner-leveraged opportunities</h3>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th>Source</th>
+                    <th>Vertical</th>
+                    <th>Partner leverage</th>
+                    <th>Stage aging</th>
+                    <th>Motion</th>
+                  </tr>
+                </thead>
+                <tbody id="partnerTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="view-section" id="forecast" data-title="Forecast scenarios">
+          <section class="controls-band" aria-label="Forecast scenario controls">
+            <label>
+              Scenario
+              <select id="scenarioSelect">
+                <option value="conservative">Conservative</option>
+                <option value="base" selected>Base</option>
+                <option value="upside">Upside</option>
+              </select>
+            </label>
+          </section>
+
+          <div class="chart-grid three">
+            <section class="panel" aria-labelledby="forecast-category-heading">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Weighted forecast</p>
+                  <h3 id="forecast-category-heading">By category</h3>
+                </div>
+              </div>
+              <div id="forecastCategoryChart" class="bar-chart"></div>
+            </section>
+
+            <section class="panel" aria-labelledby="stage-aging-heading">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Risk</p>
+                  <h3 id="stage-aging-heading">Stage aging</h3>
+                </div>
+              </div>
+              <div id="stageAgingChart" class="bar-chart"></div>
+            </section>
+
+            <section class="panel" aria-labelledby="blocker-impact-heading">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Forecast drag</p>
+                  <h3 id="blocker-impact-heading">Blocker impact</h3>
+                </div>
+              </div>
+              <div id="blockerImpactChart" class="bar-chart"></div>
+            </section>
+          </div>
+
+          <section class="panel table-panel" aria-labelledby="forecast-table-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Stage discipline</p>
+                <h3 id="forecast-table-heading">Forecast rules applied</h3>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th>Stage</th>
+                    <th>ACV</th>
+                    <th>Forecast</th>
+                    <th>Weighted</th>
+                    <th>Rule flags</th>
+                  </tr>
+                </thead>
+                <tbody id="forecastTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="view-section" id="investor" data-title="Investor snapshot">
+          <div class="snapshot-grid">
+            <section class="panel" aria-labelledby="traction-heading">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Traction</p>
+                  <h3 id="traction-heading">What improved</h3>
+                </div>
+              </div>
+              <div id="tractionList" class="narrative-list"></div>
+            </section>
+
+            <section class="panel" aria-labelledby="confidence-heading">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Confidence</p>
+                  <h3 id="confidence-heading">What is reliable</h3>
+                </div>
+              </div>
+              <div id="confidenceList" class="narrative-list"></div>
+            </section>
+
+            <section class="panel" aria-labelledby="blockers-heading">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Leadership asks</p>
+                  <h3 id="blockers-heading">Top blockers</h3>
+                </div>
+              </div>
+              <div id="blockerList" class="narrative-list"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <aside class="detail-drawer" id="detailDrawer" aria-hidden="true" aria-labelledby="drawerTitle">
+      <div class="drawer-header">
+        <div>
+          <p class="eyebrow" id="drawerEyebrow">Account detail</p>
+          <h2 id="drawerTitle"></h2>
+        </div>
+        <button class="icon-button" type="button" id="closeDrawer" title="Close" aria-label="Close account detail">
+          <span aria-hidden="true">x</span>
+        </button>
+      </div>
+      <div id="drawerBody"></div>
+    </aside>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
