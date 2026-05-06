@@ -627,8 +627,6 @@ const defaultRules = Object.fromEntries(ruleDefinitions.map((rule) => [rule.id, 
 let activeRules = { ...defaultRules };
 let activeView = "overview";
 let scenario = "base";
-let demoMode = false;
-let demoIndex = 0;
 let filterState = {
   source: "all",
   vertical: "all",
@@ -636,58 +634,6 @@ let filterState = {
   sortBy: "priorityScore",
   fitThreshold: 0
 };
-
-const demoSteps = [
-  {
-    view: "overview",
-    eyebrow: "Step 1 of 7",
-    title: "Start with the operating premise",
-    detail:
-      "Frame the artifact as a weekly GTM operating rhythm for moving from promising pilots to repeatable production deployments."
-  },
-  {
-    view: "prioritization",
-    eyebrow: "Step 2 of 7",
-    title: "Show where leadership should focus",
-    detail:
-      "Use the priority queue to explain fit, readiness, strategic value, and why weak-fit opportunities are intentionally excluded."
-  },
-  {
-    view: "readiness",
-    eyebrow: "Step 3 of 7",
-    title: "Make pilot-to-production risk visible",
-    detail:
-      "Use stage-exit criteria and blockers to show what must be true before a pilot becomes production-ready."
-  },
-  {
-    view: "partner",
-    eyebrow: "Step 4 of 7",
-    title: "Separate partner motion from direct sales",
-    detail:
-      "Point to Google Cloud and channel leverage as a distinct operating cadence with its own conversion and aging benchmarks."
-  },
-  {
-    view: "forecast",
-    eyebrow: "Step 5 of 7",
-    title: "Forecast with rules, not optimism",
-    detail:
-      "Show what is commit, what is best case, and why some accounts are not forecastable yet."
-  },
-  {
-    view: "investor",
-    eyebrow: "Step 6 of 7",
-    title: "Translate operations into investor narrative",
-    detail:
-      "Close by separating traction from confidence and naming the leadership decisions that change the growth story."
-  },
-  {
-    view: "definitions",
-    eyebrow: "Step 7 of 7",
-    title: "Leave a self-contained reference layer",
-    detail:
-      "Use the definitions tab as backup when a reviewer wants the exact meaning of metrics, scores, stages, rules, or forecast categories."
-  }
-];
 
 const exitCriteriaByBucket = {
   Discovery: "Exit: business owner, measurable pain, and ICP fit confirmed.",
@@ -1733,51 +1679,6 @@ function setActiveView(viewId, updateHash = true) {
   if (updateHash && window.location.hash !== hashForView(viewId)) {
     history.pushState(null, "", hashForView(viewId));
   }
-  if (demoMode) {
-    const matchingStep = demoSteps.findIndex((step) => step.view === viewId);
-    if (matchingStep >= 0) {
-      demoIndex = matchingStep;
-      updateDemoCoach();
-    }
-  }
-}
-
-function startDemo() {
-  const matchingStep = demoSteps.findIndex((step) => step.view === activeView);
-  demoIndex = matchingStep >= 0 ? matchingStep : 0;
-  demoMode = true;
-  setActiveView(demoSteps[demoIndex].view);
-  updateDemoCoach();
-}
-
-function nextDemoStep() {
-  if (!demoMode) {
-    startDemo();
-    return;
-  }
-  if (demoIndex >= demoSteps.length - 1) {
-    closeDemo();
-    return;
-  }
-  demoIndex += 1;
-  setActiveView(demoSteps[demoIndex].view);
-  updateDemoCoach();
-}
-
-function updateDemoCoach() {
-  const panel = byId("demoCoach");
-  const step = demoSteps[demoIndex];
-  panel.classList.toggle("active", demoMode);
-  if (!demoMode || !step) return;
-  byId("demoEyebrow").textContent = step.eyebrow;
-  byId("demoTitle").textContent = step.title;
-  byId("demoDetail").textContent = step.detail;
-  byId("nextDemoStep").textContent = demoIndex === demoSteps.length - 1 ? "Finish" : "Next step";
-}
-
-function closeDemo() {
-  demoMode = false;
-  updateDemoCoach();
 }
 
 function openAssumptions() {
@@ -1896,9 +1797,6 @@ function bindEvents() {
     renderAll();
     showToast("Rules reset");
   });
-  byId("startDemo").addEventListener("click", startDemo);
-  byId("nextDemoStep").addEventListener("click", nextDemoStep);
-  byId("closeDemo").addEventListener("click", closeDemo);
   byId("openAssumptions").addEventListener("click", openAssumptions);
   byId("closeAssumptions").addEventListener("click", closeAssumptions);
   byId("closeDrawer").addEventListener("click", closeDrawer);
@@ -1915,7 +1813,6 @@ function bindEvents() {
     if (event.key === "Escape") {
       closeDrawer();
       closeAssumptions();
-      closeDemo();
     }
   });
 }
@@ -1926,7 +1823,6 @@ function init() {
   bindEvents();
   renderAll();
   setActiveView(viewFromHash() || activeView, false);
-  updateDemoCoach();
 }
 
 init();

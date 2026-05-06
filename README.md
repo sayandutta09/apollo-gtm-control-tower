@@ -13,7 +13,6 @@ This page uses synthetic data to demonstrate account prioritization, pilot-to-pr
 - Colored forecast bars plus a forecast confidence funnel
 - Investor-style snapshot separating traction signals from confidence signals
 - Editable business-rule toggles with audit-style flags
-- Guided 5-minute walkthrough mode
 - Assumptions drawer explaining the synthetic model and score formula
 - Board-update copy block for interview follow-up
 - Definitions tab covering every major metric, score, stage, rule, and forecast term
@@ -38,9 +37,9 @@ http://localhost:4173
 
 This repo includes `.github/workflows/pages.yml`. After pushing to GitHub, enable GitHub Pages with GitHub Actions as the source if it is not enabled automatically.
 
-## Demo Frame
+## Discussion Frame
 
-Use the walkthrough like this:
+Use the discussion like this:
 
 1. AUI's hardest GTM problem is likely moving from promising pilots to repeatable production deployments.
 2. The prioritization layer shows where focus should go.

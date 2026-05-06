@@ -369,35 +369,6 @@ h3 {
   margin-bottom: 20px;
 }
 
-.demo-coach {
-  display: none;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
-  align-items: center;
-  border: 1px solid rgba(15, 143, 140, 0.24);
-  border-radius: var(--radius);
-  background: #ecf8f7;
-  margin-bottom: 16px;
-  padding: 14px 16px;
-}
-
-.demo-coach.active {
-  display: grid;
-}
-
-.demo-coach p:not(.eyebrow) {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.45;
-}
-
-.demo-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .kpi-card {
   min-height: 112px;
   border: 1px solid var(--line);
@@ -1224,7 +1195,6 @@ tbody tr:hover {
   .chart-grid.three,
   .snapshot-grid,
   .board,
-  .demo-coach,
   .glossary-grid {
     grid-template-columns: 1fr;
   }
@@ -1288,8 +1258,7 @@ tbody tr:hover {
     display: none;
   }
 
-  .insight-strip,
-  .demo-actions {
+  .insight-strip {
     align-items: flex-start;
     flex-direction: column;
   }
