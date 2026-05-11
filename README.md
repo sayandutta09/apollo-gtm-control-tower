@@ -1,6 +1,6 @@
 # Apollo GTM Control Tower
 
-Interactive GTM operating prototype for AUI StratOps interview preparation.
+Interactive GTM operating prototype for AUI StratOps planning.
 
 This page uses synthetic data to demonstrate account prioritization, pilot-to-production readiness, partner motion, forecast discipline, and investor reporting logic. It does not represent AUI internal pipeline, customers, or confidential metrics.
 
@@ -14,7 +14,7 @@ This page uses synthetic data to demonstrate account prioritization, pilot-to-pr
 - Investor-style snapshot separating traction signals from confidence signals
 - Editable business-rule toggles with audit-style flags
 - Assumptions drawer explaining the synthetic model and score formula
-- Board-update copy block for interview follow-up
+- Board-update copy block for executive follow-up
 - Definitions tab covering every major metric, score, stage, rule, and forecast term
 
 ## Run Locally
